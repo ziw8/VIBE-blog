@@ -1,65 +1,98 @@
-import Image from "next/image";
+import { Container } from "@/components/container";
+import { GitHubIcon, InstagramIcon } from "@/components/icons";
+import { PostRow } from "@/components/post-row";
+import { Reveal } from "@/components/reveal";
+import { SiteLink } from "@/components/site-link";
+import { getPosts } from "@/lib/posts";
 
 export default function Home() {
+  const latestPosts = getPosts();
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <Container>
+      <div className="space-y-16">
+        <Reveal>
+          <section>
+            <article className="article space-y-4">
+              <p>
+                소프트웨어와 디자인, 그리고 일하면서 떠오른 생각을 짧게
+                기록하는 공간입니다.
+              </p>
+              <p>
+                글을 빠르게 훑고 편하게 읽을 수 있도록 화면은 조용하게
+                유지합니다.
+              </p>
+            </article>
+          </section>
+        </Reveal>
+
+        <Reveal delay={120}>
+          <section className="space-y-2">
+            <h2 className="font-semibold text-black dark:text-white">
+              Recent posts
+            </h2>
+            <ul className="flex flex-col">
+              {latestPosts.map((post) => (
+                <li key={post.slug}>
+                  <PostRow post={post} />
+                </li>
+              ))}
+            </ul>
+            <SiteLink href="/blog">more -&gt;</SiteLink>
+          </section>
+        </Reveal>
+
+        <Reveal delay={240}>
+          <section className="space-y-2">
+            <h2 className="font-semibold text-black dark:text-white">
+              About
+            </h2>
+            <article className="article">
+              <p>이 공간이 어떤 방향으로 쓰이는지 간단히 정리해두었습니다.</p>
+            </article>
+            <ul className="flex flex-wrap gap-2">
+              <li>
+                <SiteLink href="/about">
+                  About
+                </SiteLink>
+              </li>
+            </ul>
+          </section>
+        </Reveal>
+
+        <Reveal delay={360}>
+          <section className="space-y-2">
+            <h2 className="font-semibold text-black dark:text-white">
+              Contacts
+            </h2>
+            <article className="article">
+              <p>안녕하세요. 이지우입니다.</p>
+            </article>
+            <ul className="flex flex-wrap gap-2 pt-1">
+              <li>
+                <SiteLink
+                  href="https://www.instagram.com/qziw8/"
+                  underline={false}
+                  aria-label="Instagram @qziw8"
+                  className="inline-flex size-6 items-center justify-center text-black dark:text-white"
+                >
+                  <InstagramIcon />
+                </SiteLink>
+              </li>
+              <li>
+                <SiteLink
+                  href="https://github.com/ziw8"
+                  underline={false}
+                  aria-label="GitHub ziw8"
+                  className="inline-flex size-6 items-center justify-center text-black dark:text-white"
+                >
+                  <GitHubIcon />
+                </SiteLink>
+              </li>
+            </ul>
+          </section>
+        </Reveal>
+      </div>
+    </Container>
   );
 }
