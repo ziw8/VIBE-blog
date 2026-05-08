@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { BlogViewProvider } from "@/components/blog-view-provider";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { site } from "@/lib/site";
@@ -61,7 +62,9 @@ export default function RootLayout({
       </head>
       <body className="flex min-h-full flex-col antialiased">
         <Header />
-        <main className="flex-1 py-12">{children}</main>
+        <BlogViewProvider>
+          <main className="flex-1 py-12">{children}</main>
+        </BlogViewProvider>
         <Footer />
       </body>
     </html>

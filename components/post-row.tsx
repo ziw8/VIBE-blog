@@ -1,7 +1,16 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import type { BlogPost } from "@/lib/posts";
 
-export function PostRow({ post }: { post: BlogPost }) {
+type PostRowPost = Pick<BlogPost, "slug" | "title" | "tags">;
+
+export function PostRow({
+  post,
+  meta,
+}: {
+  post: PostRowPost;
+  meta?: ReactNode;
+}) {
   return (
     <Link
       href={`/blog/${post.slug}`}
@@ -11,7 +20,7 @@ export function PostRow({ post }: { post: BlogPost }) {
         {post.title}
       </span>
       <span className="shrink-0 text-sm text-black/40 dark:text-white/40">
-        {post.category}
+        {meta ?? post.tags.join(" / ")}
       </span>
     </Link>
   );

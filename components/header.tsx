@@ -13,7 +13,7 @@ export function Header() {
           </SiteLink>
           <nav aria-label="Primary navigation" className="flex gap-4">
             <SiteLink href="/blog" underline={false}>
-              Blog
+              Posts
             </SiteLink>
           </nav>
         </div>

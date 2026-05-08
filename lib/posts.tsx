@@ -4,18 +4,23 @@ export type BlogPost = {
   slug: string;
   title: string;
   description: string;
-  category: string;
+  tags: string[];
   date: string;
   readingTime: string;
   content: ReactNode;
 };
+
+export type BlogPostListItem = Pick<
+  BlogPost,
+  "slug" | "title" | "tags" | "date"
+>;
 
 export const posts: BlogPost[] = [
   {
     slug: "astro-nano-on-next",
     title: "Next.js 블로그 레이아웃 정리",
     description: "작고 조용한 블로그 레이아웃을 Next.js에 맞춰 다듬기.",
-    category: "Build",
+    tags: ["Build", "Design"],
     date: "2026-05-08",
     readingTime: "3분 읽기",
     content: (
@@ -41,7 +46,7 @@ export const posts: BlogPost[] = [
     slug: "designing-a-quieter-blog",
     title: "조용한 블로그 디자인하기",
     description: "읽기 편한 글쓰기 공간을 만드는 작은 인터페이스 선택들.",
-    category: "Design",
+    tags: ["Design"],
     date: "2026-04-19",
     readingTime: "2분 읽기",
     content: (
@@ -68,7 +73,7 @@ export const posts: BlogPost[] = [
     slug: "small-publishing-checklist",
     title: "작은 발행 체크리스트",
     description: "글을 공개하기 전에 읽기 흐름을 점검하는 간단한 목록.",
-    category: "Notes",
+    tags: ["Notes"],
     date: "2026-03-31",
     readingTime: "2분 읽기",
     content: (

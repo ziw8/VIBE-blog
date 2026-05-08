@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { BackLink } from "@/components/back-link";
 import { Container } from "@/components/container";
 import { Reveal } from "@/components/reveal";
+import { SiteLink } from "@/components/site-link";
 import { getPost, getPosts } from "@/lib/posts";
-import { formatDate } from "@/lib/utils";
+import { formatDottedDate } from "@/lib/utils";
 
 type BlogPostPageProps = {
   params: Promise<{
@@ -51,19 +51,21 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   return (
     <Container>
-      <Reveal>
-        <BackLink fallbackHref="/blog" />
-      </Reveal>
-
-      <div className="my-10 space-y-1">
+      <div className="mb-10">
         <Reveal delay={120}>
-          <div className="flex items-center gap-1.5 text-sm">
-            <time dateTime={post.date}>{formatDate(post.date)}</time>
-            <span aria-hidden="true">&bull;</span>
-            <span>{post.readingTime}</span>
+          <div className="flex items-start justify-between gap-4 text-sm">
+            <p className="min-w-0 flex-1 text-black/50 dark:text-white/50">
+              {post.tags.join(" / ")}
+            </p>
+            <time
+              dateTime={post.date}
+              className="shrink-0 text-right text-black/40 dark:text-white/40"
+            >
+              {formatDottedDate(post.date)}
+            </time>
           </div>
         </Reveal>
-        <Reveal delay={200}>
+        <Reveal delay={200} className="mt-4">
           <h1 className="text-2xl font-semibold text-black dark:text-white">
             {post.title}
           </h1>
@@ -72,6 +74,17 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
       <Reveal delay={280}>
         <article className="article">{post.content}</article>
+      </Reveal>
+
+      <Reveal delay={360}>
+        <div className="mt-12">
+          <SiteLink
+            href="/blog"
+            className="text-sm text-black/40 hover:text-black dark:text-white/40 dark:hover:text-white"
+          >
+            {"<- Back to posts"}
+          </SiteLink>
+        </div>
       </Reveal>
     </Container>
   );
