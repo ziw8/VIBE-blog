@@ -1,37 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vibe Blog Astro
+
+Astro 감성의 미니멀 개인 블로그입니다. 글을 빠르게 훑고 편하게 읽을 수 있도록 조용한 레이아웃, Pretendard 폰트, 라이트/다크 모드, 간결한 포스트 목록을 중심으로 구성했습니다.
+
+## Features
+
+- Astro 스타일의 좁은 본문 레이아웃
+- Recent posts 목록형 인덱스
+- 라이트 / 다크 / 시스템 테마 전환
+- Pretendard 로컬 폰트 적용
+- About, Contacts 섹션
+- 정적 블로그 글 상세 페이지
 
 ## Getting Started
 
-First, run the development server:
+개발 서버를 실행합니다.
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+브라우저에서 아래 주소를 엽니다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```text
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Build
 
-## Learn More
+프로덕션 빌드를 확인합니다.
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run build
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `app/page.tsx` - 홈 화면
+- `app/blog/page.tsx` - 블로그 목록
+- `app/blog/[slug]/page.tsx` - 글 상세 페이지
+- `components/` - 레이아웃과 UI 컴포넌트
+- `lib/posts.tsx` - 블로그 글 데이터
+- `public/fonts/` - Pretendard 폰트 파일
 
-## Deploy on Vercel
+## Theme
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# Vibe-blog-astro
+이 블로그는 Astro 기반 블로그의 단정한 분위기를 참고해 만들었습니다. 화면의 장식은 줄이고, 글 목록과 본문 읽기에 집중할 수 있도록 구성했습니다.
