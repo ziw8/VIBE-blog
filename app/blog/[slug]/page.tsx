@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { CommentEmojiSummaryLoader, Comments } from "@/components/comments";
 import { Container } from "@/components/container";
 import { Reveal } from "@/components/reveal";
 import { SiteLink } from "@/components/site-link";
@@ -77,7 +78,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       </Reveal>
 
       <Reveal delay={360}>
-        <div className="mt-12">
+        <div className="mt-12 space-y-4">
+          <CommentEmojiSummaryLoader postSlug={post.slug} />
           <SiteLink
             href="/blog"
             className="text-sm text-black/40 hover:text-black dark:text-white/40 dark:hover:text-white"
@@ -85,6 +87,12 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             {"<- Back to posts"}
           </SiteLink>
         </div>
+      </Reveal>
+
+      <Reveal delay={440}>
+        <section className="mt-8">
+          <Comments postSlug={post.slug} />
+        </section>
       </Reveal>
     </Container>
   );

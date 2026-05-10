@@ -15,6 +15,9 @@ export function Header() {
             <SiteLink href="/blog" underline={false}>
               Posts
             </SiteLink>
+            <SiteLink href="/about" underline={false}>
+              About
+            </SiteLink>
           </nav>
         </div>
       </div>

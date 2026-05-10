@@ -62,24 +62,6 @@ export default function Home() {
         <Reveal delay={360}>
           <section className="space-y-2">
             <h2 className="font-semibold text-black dark:text-white">
-              About
-            </h2>
-            <p className="text-black/75 dark:text-white/90">
-              이 공간이 어떤 방향으로 쓰이는지 간단히 정리해두었습니다.
-            </p>
-            <ul className="flex flex-wrap gap-2">
-              <li>
-                <SiteLink href="/about">
-                  About
-                </SiteLink>
-              </li>
-            </ul>
-          </section>
-        </Reveal>
-
-        <Reveal delay={480}>
-          <section className="space-y-2">
-            <h2 className="font-semibold text-black dark:text-white">
               Contacts
             </h2>
             <p className="text-black/75 dark:text-white/90">
