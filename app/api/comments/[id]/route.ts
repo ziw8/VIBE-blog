@@ -7,6 +7,7 @@ import {
   isMissingParentIdError,
   toPublicComment,
   verifyCommentPassword,
+  verifyCommentManagementPassword,
 } from "@/lib/supabase-comments";
 
 type CommentRouteContext = {
@@ -184,7 +185,7 @@ export async function DELETE(request: Request, { params }: CommentRouteContext) 
     return Response.json({ message: "댓글을 찾지 못했습니다." }, { status: 404 });
   }
 
-  if (!verifyCommentPassword(password.value, stored.passwordHash)) {
+  if (!verifyCommentManagementPassword(password.value, stored.passwordHash)) {
     return Response.json(
       { message: "비밀번호가 일치하지 않습니다." },
       { status: 403 },

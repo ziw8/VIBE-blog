@@ -5,7 +5,7 @@ import { Container } from "@/components/container";
 import { Reveal } from "@/components/reveal";
 import { SiteLink } from "@/components/site-link";
 import { getPublishedPost, getPublishedPosts } from "@/lib/posts";
-import { formatDottedDate } from "@/lib/utils";
+import { formatDottedDate, normalizeSlugParam } from "@/lib/utils";
 
 type BlogPostPageProps = {
   params: Promise<{
@@ -14,14 +14,6 @@ type BlogPostPageProps = {
 };
 
 export const dynamic = "force-dynamic";
-
-function normalizeSlugParam(slug: string) {
-  try {
-    return decodeURIComponent(slug);
-  } catch {
-    return slug;
-  }
-}
 
 export async function generateStaticParams() {
   return (await getPublishedPosts()).map((post) => ({

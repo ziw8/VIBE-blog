@@ -10,18 +10,23 @@ import type { BlogPostListItem } from "@/lib/posts";
 import {
   cn,
   formatCompactDate,
+  getPostPath,
   getTagSectionId,
   groupByYear,
 } from "@/lib/utils";
 
-function groupByTag(posts: BlogPostListItem[]) {
+function groupByTag(posts: BlogPostListItem[], registeredTags: string[]) {
+  const seededGroups = Object.fromEntries(
+    registeredTags.map((tag) => [tag, [] as BlogPostListItem[]]),
+  );
+
   return posts.reduce<Record<string, BlogPostListItem[]>>((groups, post) => {
     post.tags.forEach((tag) => {
       groups[tag] = [...(groups[tag] ?? []), post];
     });
 
     return groups;
-  }, {});
+  }, seededGroups);
 }
 
 function postModifiedTime(post: BlogPostListItem) {
@@ -29,6 +34,10 @@ function postModifiedTime(post: BlogPostListItem) {
 }
 
 function getLatestTagTime(posts: BlogPostListItem[]) {
+  if (posts.length === 0) {
+    return Number.NEGATIVE_INFINITY;
+  }
+
   return Math.max(...posts.map(postModifiedTime));
 }
 
@@ -72,7 +81,7 @@ function BlogViewPostRow({
 }) {
   return (
     <Link
-      href={`/blog/${post.slug}`}
+      href={getPostPath("/blog", post.slug)}
       className="group flex min-h-9 items-center justify-between gap-4 rounded-lg py-1.5 transition-colors duration-300 ease-in-out"
     >
       <span className="min-w-0 flex-1 truncate pr-4 text-black/75 transition-colors duration-300 ease-in-out group-hover:text-black group-hover:underline group-hover:decoration-black/25 dark:text-white/90 dark:group-hover:text-white dark:group-hover:decoration-white/50">
@@ -85,7 +94,13 @@ function BlogViewPostRow({
   );
 }
 
-export function BlogViewTabs({ posts }: { posts: BlogPostListItem[] }) {
+export function BlogViewTabs({
+  posts,
+  registeredTags,
+}: {
+  posts: BlogPostListItem[];
+  registeredTags: string[];
+}) {
   const {
     blogView: selectedView,
     targetTag,
@@ -94,7 +109,7 @@ export function BlogViewTabs({ posts }: { posts: BlogPostListItem[] }) {
   const isTagsView = selectedView === "tags";
   const groupedPosts = groupByYear(posts);
   const groupedTags = Object.fromEntries(
-    Object.entries(groupByTag(posts)).map(([tag, tagPosts]) => [
+    Object.entries(groupByTag(posts, registeredTags)).map(([tag, tagPosts]) => [
       tag,
       [...tagPosts].sort(
         (a, b) => postModifiedTime(b) - postModifiedTime(a),

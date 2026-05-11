@@ -10,22 +10,14 @@ const adminSections = [
   {
     href: "/admin/posts",
     title: "글쓰기",
-    description: "새 글 작성과 게시글 목록을 관리합니다.",
   },
   {
-    href: "/admin",
-    title: "첫 페이지 관리",
-    description: "소개글, About, Contacts 문구를 관리할 예정입니다.",
-  },
-  {
-    href: "/admin",
+    href: "/admin/tags",
     title: "태그 관리",
-    description: "태그 추가, 제외, 이름 수정을 글쓰기 기능과 연결합니다.",
   },
   {
-    href: "/admin",
-    title: "댓글 관리",
-    description: "댓글과 답글을 확인하고 관리자 권한으로 삭제합니다.",
+    href: "/admin/home",
+    title: "첫 페이지 관리",
   },
 ];
 
@@ -51,16 +43,13 @@ export default async function AdminPage() {
               <h1 className="text-2xl font-semibold text-black dark:text-white">
                 관리 페이지
               </h1>
-              <p className="text-black/60 dark:text-white/60">
-                글, 첫 페이지, 태그, 댓글 관리를 이곳에 차례로 붙입니다.
-              </p>
             </div>
             <AdminLogoutButton />
           </div>
         </Reveal>
 
         <Reveal delay={120}>
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid gap-5 sm:grid-cols-3">
             {adminSections.map((section) => (
               <section
                 key={section.title}
@@ -72,9 +61,6 @@ export default async function AdminPage() {
                 >
                   {section.title}
                 </Link>
-                <p className="mt-2 text-sm leading-6 text-black/55 dark:text-white/55">
-                  {section.description}
-                </p>
               </section>
             ))}
           </div>

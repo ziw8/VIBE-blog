@@ -6,6 +6,7 @@ import {
   getStoredPosts,
   type StoredPostRow,
 } from "@/lib/supabase-posts";
+import { getStoredTags, type StoredTagRow } from "@/lib/supabase-tags";
 import { getReadingTime } from "@/lib/post-editor";
 
 export type BlogPost = {
@@ -182,6 +183,41 @@ function sortPosts(items: BlogPost[]) {
   );
 }
 
+function uniqueSorted(values: string[]) {
+  return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b));
+}
+
+function getActiveTagMap(tagRows: StoredTagRow[]) {
+  const activeTagRows = tagRows.filter((tag) => !tag.deleted_at);
+  const tagMap = new Map<string, string>();
+
+  activeTagRows.forEach((tag) => {
+    [tag.name, ...tag.aliases].forEach((name) => {
+      tagMap.set(name.toLocaleLowerCase(), tag.name);
+    });
+  });
+
+  return tagMap;
+}
+
+function normalizePostTags(post: BlogPost, tagRows: StoredTagRow[]) {
+  if (tagRows.length === 0) {
+    return post;
+  }
+
+  const tagMap = getActiveTagMap(tagRows);
+  const tags = post.tags.flatMap((tag) => {
+    const mappedTag = tagMap.get(tag.toLocaleLowerCase());
+
+    return mappedTag ? [mappedTag] : [];
+  });
+
+  return {
+    ...post,
+    tags: Array.from(new Set(tags)),
+  };
+}
+
 export function getPost(slug: string) {
   return posts.map(normalizeStaticPost).find((post) => post.slug === slug);
 }
@@ -197,37 +233,108 @@ export function getPostTags() {
 }
 
 export async function getPublishedPosts() {
-  const storedPosts = (await getStoredPosts()).map(toBlogPost);
+  const [storedPostRows, storedPostShadows, tagRows] = await Promise.all([
+    getStoredPosts(),
+    getStoredPostShadows(),
+    getStoredTags({ includeDeleted: true }),
+  ]);
+  const storedPosts = storedPostRows
+    .map(toBlogPost)
+    .map((post) => normalizePostTags(post, tagRows));
   const storedSlugs = new Set(
-    (await getStoredPostShadows()).map((post) => post.slug),
+    storedPostShadows.map((post) => post.slug),
   );
   const staticPosts = posts
     .filter((post) => !storedSlugs.has(post.slug))
-    .map(normalizeStaticPost);
+    .map(normalizeStaticPost)
+    .map((post) => normalizePostTags(post, tagRows));
 
   return sortPosts([...storedPosts, ...staticPosts]);
 }
 
 export async function getPublishedPost(slug: string) {
-  const storedPost = await getStoredPost(slug);
+  const [storedPost, storedShadow, tagRows] = await Promise.all([
+    getStoredPost(slug),
+    getStoredPostShadow(slug),
+    getStoredTags({ includeDeleted: true }),
+  ]);
 
   if (storedPost) {
-    return toBlogPost(storedPost);
+    return normalizePostTags(toBlogPost(storedPost), tagRows);
   }
-
-  const storedShadow = await getStoredPostShadow(slug);
 
   if (storedShadow) {
     return undefined;
   }
 
-  return getPost(slug);
+  const staticPost = getPost(slug);
+
+  return staticPost ? normalizePostTags(staticPost, tagRows) : undefined;
 }
 
 export async function getPublishedPostTags() {
   const publishedPosts = await getPublishedPosts();
 
-  return Array.from(new Set(publishedPosts.flatMap((post) => post.tags))).sort(
-    (a, b) => a.localeCompare(b),
-  );
+  return uniqueSorted(publishedPosts.flatMap((post) => post.tags));
+}
+
+export async function getRegisteredPostTags() {
+  const tagRows = await getStoredTags({ includeDeleted: true });
+  const activeTags = tagRows
+    .filter((tag) => !tag.deleted_at)
+    .map((tag) => tag.name);
+
+  if (tagRows.length > 0) {
+    return uniqueSorted(activeTags);
+  }
+
+  return getPublishedPostTags();
+}
+
+function postDateTime(post: BlogPost) {
+  return new Date(`${post.date}T00:00:00`).valueOf();
+}
+
+export async function getHomePostTags() {
+  const [publishedPosts, tagRows] = await Promise.all([
+    getPublishedPosts(),
+    getStoredTags(),
+  ]);
+
+  if (tagRows.length === 0) {
+    return uniqueSorted(publishedPosts.flatMap((post) => post.tags));
+  }
+
+  const latestPostTimesByTag = new Map<string, number>();
+
+  publishedPosts.forEach((post) => {
+    post.tags.forEach((tag) => {
+      latestPostTimesByTag.set(
+        tag,
+        Math.max(latestPostTimesByTag.get(tag) ?? 0, postDateTime(post)),
+      );
+    });
+  });
+
+  return tagRows
+    .map((tag) => ({
+      createdTime: new Date(tag.created_at).valueOf(),
+      name: tag.name,
+      postTime: latestPostTimesByTag.get(tag.name) ?? 0,
+    }))
+    .sort((a, b) => {
+      const aHasPosts = a.postTime > 0;
+      const bHasPosts = b.postTime > 0;
+
+      if (aHasPosts !== bHasPosts) {
+        return aHasPosts ? -1 : 1;
+      }
+
+      if (aHasPosts && bHasPosts) {
+        return b.postTime - a.postTime || a.name.localeCompare(b.name);
+      }
+
+      return b.createdTime - a.createdTime || a.name.localeCompare(b.name);
+    })
+    .map((tag) => tag.name);
 }

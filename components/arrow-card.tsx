@@ -1,10 +1,11 @@
 import NextLink from "next/link";
 import type { BlogPost } from "@/lib/posts";
+import { getPostPath } from "@/lib/utils";
 
 export function ArrowCard({ post }: { post: BlogPost }) {
   return (
     <NextLink
-      href={`/blog/${post.slug}`}
+      href={getPostPath("/blog", post.slug)}
       className="group relative flex min-h-20 flex-nowrap rounded-lg border border-black/15 px-4 py-3 pr-10 transition-colors duration-300 ease-in-out hover:bg-black/5 hover:text-black dark:border-white/20 dark:hover:bg-white/5 dark:hover:text-white"
     >
       <span className="flex min-w-0 flex-1 flex-col">

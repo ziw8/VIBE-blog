@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { BlogViewTabs } from "./blog-view-tabs";
 import { Container } from "@/components/container";
-import { getPublishedPosts } from "@/lib/posts";
+import { getPublishedPosts, getRegisteredPostTags } from "@/lib/posts";
 
 export const metadata: Metadata = {
   title: "Posts",
@@ -9,7 +9,11 @@ export const metadata: Metadata = {
 };
 
 export default async function BlogPage() {
-  const posts = (await getPublishedPosts()).map(
+  const [publishedPosts, registeredTags] = await Promise.all([
+    getPublishedPosts(),
+    getRegisteredPostTags(),
+  ]);
+  const posts = publishedPosts.map(
     ({ date, slug, tags, title, updatedAt }) => ({
       date,
       slug,
@@ -21,7 +25,7 @@ export default async function BlogPage() {
 
   return (
     <Container>
-      <BlogViewTabs posts={posts} />
+      <BlogViewTabs posts={posts} registeredTags={registeredTags} />
     </Container>
   );
 }

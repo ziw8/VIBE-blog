@@ -1,5 +1,6 @@
 import { type NextRequest } from "next/server";
 import { validateCreateComment } from "@/lib/comment-validation";
+import { getPublishedPost } from "@/lib/posts";
 import {
   commentsAreConfigured,
   getCommentsClient,
@@ -9,6 +10,7 @@ import {
   isMissingParentIdError,
   toPublicComment,
 } from "@/lib/supabase-comments";
+import { normalizeSlugParam } from "@/lib/utils";
 
 function setupResponse() {
   return Response.json(
@@ -40,7 +42,9 @@ async function readJson(request: Request) {
 }
 
 export async function GET(request: NextRequest) {
-  const postSlug = request.nextUrl.searchParams.get("postSlug")?.trim();
+  const postSlug = normalizeSlugParam(
+    request.nextUrl.searchParams.get("postSlug")?.trim() ?? "",
+  );
 
   if (!postSlug) {
     return Response.json(
@@ -111,6 +115,15 @@ export async function POST(request: Request) {
     return Response.json({ message: input.message }, { status: 400 });
   }
 
+  const post = await getPublishedPost(normalizeSlugParam(input.value.postSlug));
+
+  if (!post) {
+    return Response.json(
+      { message: "게시글을 찾지 못했습니다." },
+      { status: 404 },
+    );
+  }
+
   const supabase = getCommentsClient();
 
   if (!supabase) {
@@ -122,7 +135,7 @@ export async function POST(request: Request) {
       .from("comments")
       .select("id, parent_id")
       .eq("id", input.value.parentId)
-      .eq("post_slug", input.value.postSlug)
+      .eq("post_slug", post.slug)
       .is("deleted_at", null)
       .maybeSingle();
 
@@ -155,7 +168,7 @@ export async function POST(request: Request) {
   const { data, error } = await supabase
     .from("comments")
     .insert({
-      post_slug: input.value.postSlug,
+      post_slug: post.slug,
       parent_id: input.value.parentId,
       nickname: input.value.nickname,
       body: input.value.body,
@@ -174,7 +187,7 @@ export async function POST(request: Request) {
       const legacy = await supabase
         .from("comments")
         .insert({
-          post_slug: input.value.postSlug,
+          post_slug: post.slug,
           nickname: input.value.nickname,
           body: input.value.body,
           emoji: input.value.emoji,

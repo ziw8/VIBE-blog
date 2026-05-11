@@ -120,6 +120,34 @@ export function verifyCommentPassword(password: string, storedHash: string) {
   return timingSafeEqual(candidate, expected);
 }
 
+function getCommentMasterPassword() {
+  return process.env.COMMENT_MASTER_PASSWORD?.trim() || null;
+}
+
+function secureCompareString(left: string, right: string) {
+  const leftBuffer = Buffer.from(left);
+  const rightBuffer = Buffer.from(right);
+
+  if (leftBuffer.length !== rightBuffer.length) {
+    return false;
+  }
+
+  return timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+export function verifyCommentManagementPassword(
+  password: string,
+  storedHash: string,
+) {
+  const masterPassword = getCommentMasterPassword();
+
+  if (masterPassword && secureCompareString(password, masterPassword)) {
+    return true;
+  }
+
+  return verifyCommentPassword(password, storedHash);
+}
+
 export function toPublicComment(
   row: Pick<
     CommentRow,

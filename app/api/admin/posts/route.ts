@@ -5,13 +5,14 @@ import {
   slugifyTitle,
   validatePostEditorPayload,
 } from "@/lib/post-editor";
-import { getPost, getPublishedPostTags } from "@/lib/posts";
+import { getPost, getRegisteredPostTags } from "@/lib/posts";
 import {
   getPostsClient,
   getPublicPostFields,
   isMissingPostsTableError,
   postsStorageIsConfigured,
 } from "@/lib/supabase-posts";
+import { getDraftsClient } from "@/lib/supabase-drafts";
 
 type PostsClient = NonNullable<ReturnType<typeof getPostsClient>>;
 
@@ -38,6 +39,16 @@ async function readJson(request: Request) {
   } catch {
     return null;
   }
+}
+
+function getDraftId(payload: unknown) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return null;
+  }
+
+  const draftId = (payload as Record<string, unknown>).draftId;
+
+  return typeof draftId === "string" && draftId ? draftId : null;
 }
 
 async function slugExists(supabase: PostsClient, slug: string) {
@@ -93,8 +104,10 @@ export async function POST(request: Request) {
     return setupRequiredResponse();
   }
 
-  const registeredTags = await getPublishedPostTags();
-  const input = validatePostEditorPayload(await readJson(request), registeredTags);
+  const registeredTags = await getRegisteredPostTags();
+  const payload = await readJson(request);
+  const draftId = getDraftId(payload);
+  const input = validatePostEditorPayload(payload, registeredTags);
 
   if (!input.ok) {
     return Response.json({ message: input.message }, { status: 400 });
@@ -141,6 +154,11 @@ export async function POST(request: Request) {
   }
 
   revalidatePostPages(data.slug);
+  revalidatePath("/admin/posts/new");
+
+  if (draftId) {
+    await getDraftsClient()?.from("post_drafts").delete().eq("id", draftId);
+  }
 
   return Response.json({ post: { slug: data.slug } }, { status: 201 });
 }

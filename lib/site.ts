@@ -1,3 +1,5 @@
+import { getSiteSection } from "@/lib/supabase-site-sections";
+
 export const site = {
   name: "지우 블로그",
   title: "지우 블로그",
@@ -5,7 +7,12 @@ export const site = {
   url: "http://localhost:3000",
 };
 
-export const navItems = [
-  { href: "/blog", label: "blog" },
-  { href: "/about", label: "about" },
-];
+export async function getSite() {
+  const blogName = await getSiteSection("blogName");
+
+  return {
+    ...site,
+    name: blogName.body,
+    title: blogName.body,
+  };
+}

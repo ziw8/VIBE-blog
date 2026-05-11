@@ -1,11 +1,12 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { AdminPostsTabs } from "@/components/admin-posts-tabs";
 import { Container } from "@/components/container";
 import { Reveal } from "@/components/reveal";
 import { adminIsAuthenticated } from "@/lib/admin-auth";
 import { getPublishedPosts } from "@/lib/posts";
-import { formatCompactDate } from "@/lib/utils";
+import { getStoredDrafts } from "@/lib/supabase-drafts";
 
 export const metadata: Metadata = {
   title: "Admin Posts",
@@ -17,7 +18,10 @@ export default async function AdminPostsPage() {
     notFound();
   }
 
-  const posts = await getPublishedPosts();
+  const [posts, drafts] = await Promise.all([
+    getPublishedPosts(),
+    getStoredDrafts(),
+  ]);
 
   return (
     <Container>
@@ -32,39 +36,36 @@ export default async function AdminPostsPage() {
                 글 관리
               </h1>
             </div>
-            <Link
-              href="/admin/posts/new"
-              className="shrink-0 text-sm font-semibold text-black underline decoration-black/25 underline-offset-4 transition-colors duration-300 ease-in-out hover:decoration-black/60 dark:text-white dark:decoration-white/35 dark:hover:decoration-white/70"
-            >
-              새 글 쓰기
-            </Link>
+            <div className="flex shrink-0 items-center gap-3">
+              <Link
+                href="/admin"
+                className="text-sm text-black/45 transition-colors duration-300 ease-in-out hover:text-black dark:text-white/45 dark:hover:text-white"
+              >
+                {"<- Admin"}
+              </Link>
+              <Link
+                href="/admin/posts/new"
+                className="text-sm font-semibold text-black underline decoration-black/25 underline-offset-4 transition-colors duration-300 ease-in-out hover:decoration-black/60 dark:text-white dark:decoration-white/35 dark:hover:decoration-white/70"
+              >
+                새 글 쓰기
+              </Link>
+            </div>
           </div>
         </Reveal>
 
         <Reveal delay={120}>
-          <section className="space-y-2">
-            <h2 className="font-semibold text-black dark:text-white">
-              작성된 글
-            </h2>
-            <ul className="flex flex-col">
-              {posts.map((post) => (
-                <li key={post.slug}>
-                  <Link
-                    href={`/admin/posts/${post.slug}`}
-                    className="group flex min-h-9 items-center justify-between gap-4 rounded-lg py-1.5 transition-colors duration-300 ease-in-out"
-                  >
-                    <span className="min-w-0 flex-1 truncate pr-4 text-black/75 transition-colors duration-300 ease-in-out group-hover:text-black group-hover:underline group-hover:decoration-black/25 dark:text-white/90 dark:group-hover:text-white dark:group-hover:decoration-white/50">
-                      {post.title}
-                    </span>
-                    <span className="flex shrink-0 items-center gap-2 text-sm text-black/40 dark:text-white/40">
-                      <span>수정/삭제</span>
-                      {formatCompactDate(post.date)}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
+          <AdminPostsTabs
+            drafts={drafts.map((draft) => ({
+              id: draft.id,
+              title: draft.title,
+              updatedAt: draft.updated_at,
+            }))}
+            posts={posts.map((post) => ({
+              date: post.date,
+              slug: post.slug,
+              title: post.title,
+            }))}
+          />
         </Reveal>
       </div>
     </Container>

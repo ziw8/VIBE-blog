@@ -4,26 +4,27 @@ import { HomeTagLink } from "@/components/home-tag-link";
 import { PostRow } from "@/components/post-row";
 import { Reveal } from "@/components/reveal";
 import { SiteLink } from "@/components/site-link";
-import { getPublishedPosts } from "@/lib/posts";
+import { getHomePostTags, getPublishedPosts } from "@/lib/posts";
+import { splitSectionParagraphs } from "@/lib/site-sections";
+import { getSiteSection } from "@/lib/supabase-site-sections";
 
 export default async function Home() {
-  const latestPosts = await getPublishedPosts();
-  const tags = Array.from(new Set(latestPosts.flatMap((post) => post.tags)));
+  const [latestPosts, tags, introSection, contactsSection] = await Promise.all([
+    getPublishedPosts(),
+    getHomePostTags(),
+    getSiteSection("intro"),
+    getSiteSection("contacts"),
+  ]);
 
   return (
     <Container>
       <div className="space-y-16">
         <Reveal>
           <section>
-            <article className="article space-y-4">
-              <p>
-                소프트웨어와 디자인, 그리고 일하면서 떠오른 생각을 짧게
-                기록하는 공간입니다.
-              </p>
-              <p>
-                글을 빠르게 훑고 편하게 읽을 수 있도록 화면은 조용하게
-                유지합니다.
-              </p>
+            <article className="article space-y-4 text-black/75 dark:text-white/90">
+              {splitSectionParagraphs(introSection.body).map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
             </article>
           </section>
         </Reveal>
@@ -49,7 +50,7 @@ export default async function Home() {
             <h2 className="font-semibold text-black dark:text-white">
               Tags
             </h2>
-            <ul className="flex flex-wrap justify-between gap-x-4 gap-y-2">
+            <ul className="flex flex-wrap justify-start gap-x-4 gap-y-2">
               {tags.map((tag) => (
                 <li key={tag} className="text-black/75 dark:text-white/90">
                   <HomeTagLink tag={tag} />
@@ -64,9 +65,11 @@ export default async function Home() {
             <h2 className="font-semibold text-black dark:text-white">
               Contacts
             </h2>
-            <p className="text-black/75 dark:text-white/90">
-              안녕하세요. 이지우입니다.
-            </p>
+            <div className="space-y-2 text-black/75 dark:text-white/90">
+              {splitSectionParagraphs(contactsSection.body).map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
+            </div>
             <ul className="flex flex-wrap gap-2">
               <li>
                 <SiteLink

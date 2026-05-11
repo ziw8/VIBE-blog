@@ -34,6 +34,18 @@ export function getTagSectionId(tag: string) {
   return `tag-${encodeURIComponent(tag)}`;
 }
 
+export function getPostPath(basePath: "/admin/posts" | "/blog", slug: string) {
+  return `${basePath}/${encodeURIComponent(slug)}`;
+}
+
+export function normalizeSlugParam(slug: string) {
+  try {
+    return decodeURIComponent(slug).normalize("NFKC");
+  } catch {
+    return slug.normalize("NFKC");
+  }
+}
+
 export function groupByYear<T extends { date: string }>(items: T[]) {
   return items.reduce<Record<string, T[]>>((groups, item) => {
     const year = new Date(`${item.date}T00:00:00`).getFullYear().toString();

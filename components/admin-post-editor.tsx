@@ -11,18 +11,19 @@ type EditablePost = {
   title: string;
 };
 
-type AdminPostEditorProps = {
-  post?: EditablePost;
-  tags: string[];
-};
-
-type DraftPost = {
-  bodyHtml: string;
+type EditableDraft = {
+  contentHtml: string;
+  id: string;
   tags: string[];
   title: string;
 };
 
-const DRAFT_KEY = "blog-admin-post-draft";
+type AdminPostEditorProps = {
+  draft?: EditableDraft;
+  post?: EditablePost;
+  tags: string[];
+};
+
 const colorOptions = [
   { label: "검정", swatch: "var(--article-default-text)", value: "default" },
   { label: "회색", swatch: "var(--article-muted-text)", value: "muted" },
@@ -58,18 +59,24 @@ function normalizeLinkUrl(value: string | null) {
   return `https://${trimmedUrl}`;
 }
 
-export function AdminPostEditor({ post, tags }: AdminPostEditorProps) {
+export function AdminPostEditor({ draft, post, tags }: AdminPostEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const initializedRef = useRef(false);
   const savedRangeRef = useRef<Range | null>(null);
   const router = useRouter();
   const isEditing = Boolean(post);
-  const [title, setTitle] = useState(post?.title ?? "");
-  const [selectedTags, setSelectedTags] = useState<string[]>(post?.tags ?? []);
-  const [bodyHtml, setBodyHtml] = useState(post?.contentHtml ?? "");
+  const isDraft = Boolean(draft);
+  const currentItem = post ?? draft;
+  const initialContentHtml = currentItem?.contentHtml ?? "";
+  const [title, setTitle] = useState(currentItem?.title ?? "");
+  const [selectedTags, setSelectedTags] = useState<string[]>(
+    currentItem?.tags.filter((tag) => tags.includes(tag)) ?? [],
+  );
+  const [bodyHtml, setBodyHtml] = useState(initialContentHtml);
   const [status, setStatus] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
 
   useEffect(() => {
     if (initializedRef.current) {
@@ -78,38 +85,10 @@ export function AdminPostEditor({ post, tags }: AdminPostEditorProps) {
 
     initializedRef.current = true;
 
-    if (isEditing) {
-      if (editorRef.current) {
-        editorRef.current.innerHTML = post?.contentHtml ?? "";
-      }
-
-      return;
+    if (editorRef.current) {
+      editorRef.current.innerHTML = initialContentHtml;
     }
-
-    const timeoutId = window.setTimeout(() => {
-      const rawDraft = window.localStorage.getItem(DRAFT_KEY);
-
-      if (!rawDraft) {
-        return;
-      }
-
-      try {
-        const draft = JSON.parse(rawDraft) as Partial<DraftPost>;
-
-        setTitle(draft.title ?? "");
-        setSelectedTags(draft.tags?.filter((tag) => tags.includes(tag)) ?? []);
-        setBodyHtml(draft.bodyHtml ?? "");
-
-        if (editorRef.current) {
-          editorRef.current.innerHTML = draft.bodyHtml ?? "";
-        }
-      } catch {
-        window.localStorage.removeItem(DRAFT_KEY);
-      }
-    }, 0);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [isEditing, post?.contentHtml, tags]);
+  }, [initialContentHtml]);
 
   function saveRange() {
     const range = getSelectionRange();
@@ -139,6 +118,7 @@ export function AdminPostEditor({ post, tags }: AdminPostEditorProps) {
   }
 
   function syncBodyHtml() {
+    setBodyHtml(editorRef.current?.innerHTML ?? "");
     saveRange();
   }
 
@@ -231,30 +211,62 @@ export function AdminPostEditor({ post, tags }: AdminPostEditorProps) {
     );
   }
 
-  function handleSaveDraft() {
+  async function handleSaveDraft() {
     if (isEditing) {
       return;
     }
 
-    const draft: DraftPost = {
-      bodyHtml: editorRef.current?.innerHTML ?? bodyHtml,
-      tags: selectedTags,
-      title: title.trim(),
-    };
+    setIsSavingDraft(true);
+    setStatus(null);
 
-    window.localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-    setStatus("임시 저장했습니다.");
+    try {
+      const response = await fetch(
+        isDraft && draft
+          ? `/api/admin/post-drafts/${draft.id}`
+          : "/api/admin/post-drafts",
+        {
+          method: isDraft ? "PATCH" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contentHtml: editorRef.current?.innerHTML ?? bodyHtml,
+            tags: selectedTags,
+            title,
+          }),
+        },
+      );
+      const result = (await response.json().catch(() => ({}))) as {
+        draft?: { id: string };
+        message?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(result.message ?? "임시 저장하지 못했습니다.");
+      }
+
+      if (!isDraft && result.draft?.id) {
+        router.replace(`/admin/posts/drafts/${result.draft.id}`);
+        router.refresh();
+        return;
+      }
+
+      setStatus("임시 저장했습니다.");
+      router.refresh();
+    } catch (error) {
+      setStatus(
+        error instanceof Error ? error.message : "임시 저장하지 못했습니다.",
+      );
+    } finally {
+      setIsSavingDraft(false);
+    }
   }
 
   function handleClearDraft() {
-    if (!isEditing) {
-      window.localStorage.removeItem(DRAFT_KEY);
-    }
-
     setTitle("");
     setSelectedTags([]);
     setBodyHtml("");
-    setStatus(isEditing ? "입력값을 비웠습니다." : "초안을 비웠습니다.");
+    setStatus("입력값을 비웠습니다.");
 
     if (editorRef.current) {
       editorRef.current.innerHTML = "";
@@ -276,6 +288,7 @@ export function AdminPostEditor({ post, tags }: AdminPostEditorProps) {
           },
           body: JSON.stringify({
             contentHtml: editorRef.current?.innerHTML ?? bodyHtml,
+            draftId: draft?.id,
             tags: selectedTags,
             title,
           }),
@@ -290,16 +303,13 @@ export function AdminPostEditor({ post, tags }: AdminPostEditorProps) {
         throw new Error(result.message ?? "글을 저장하지 못했습니다.");
       }
 
-      window.localStorage.removeItem(DRAFT_KEY);
-
       if (post) {
         router.replace("/admin/posts");
         router.refresh();
         return;
       }
 
-      setStatus("발행했습니다.");
-      router.replace(`/admin/posts/${result.post?.slug ?? ""}`);
+      router.replace("/admin/posts");
       router.refresh();
     } catch (error) {
       setStatus(
@@ -311,7 +321,15 @@ export function AdminPostEditor({ post, tags }: AdminPostEditorProps) {
   }
 
   async function handleDelete() {
-    if (!post || !window.confirm("이 글을 삭제할까요?")) {
+    if (!post && !draft) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      post ? "이 글을 삭제할까요?" : "이 임시저장 글을 삭제할까요?",
+    );
+
+    if (!confirmed) {
       return;
     }
 
@@ -319,22 +337,32 @@ export function AdminPostEditor({ post, tags }: AdminPostEditorProps) {
     setStatus(null);
 
     try {
-      const response = await fetch(`/api/admin/posts/${post.slug}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        post ? `/api/admin/posts/${post.slug}` : `/api/admin/post-drafts/${draft?.id}`,
+        {
+          method: "DELETE",
+        },
+      );
       const result = (await response.json().catch(() => ({}))) as {
         message?: string;
       };
 
       if (!response.ok) {
-        throw new Error(result.message ?? "글을 삭제하지 못했습니다.");
+        throw new Error(
+          result.message ??
+            (post ? "글을 삭제하지 못했습니다." : "임시저장 글을 삭제하지 못했습니다."),
+        );
       }
 
       router.replace("/admin/posts");
       router.refresh();
     } catch (error) {
       setStatus(
-        error instanceof Error ? error.message : "글을 삭제하지 못했습니다.",
+        error instanceof Error
+          ? error.message
+          : post
+            ? "글을 삭제하지 못했습니다."
+            : "임시저장 글을 삭제하지 못했습니다.",
       );
     } finally {
       setIsDeleting(false);
@@ -481,7 +509,7 @@ export function AdminPostEditor({ post, tags }: AdminPostEditorProps) {
       ) : null}
 
       <div className="flex items-center justify-end gap-2">
-        {post ? (
+        {post || draft ? (
           <button
             type="button"
             disabled={isDeleting}
@@ -490,15 +518,17 @@ export function AdminPostEditor({ post, tags }: AdminPostEditorProps) {
           >
             {isDeleting ? "삭제 중" : "삭제"}
           </button>
-        ) : (
+        ) : null}
+        {!post ? (
           <button
             type="button"
-            className="h-9 rounded-md px-3 text-sm text-black/45 transition-colors duration-300 ease-in-out hover:text-black dark:text-white/45 dark:hover:text-white"
+            disabled={isSavingDraft}
+            className="h-9 rounded-md px-3 text-sm text-black/45 transition-colors duration-300 ease-in-out hover:text-black disabled:cursor-not-allowed disabled:opacity-50 dark:text-white/45 dark:hover:text-white"
             onClick={handleSaveDraft}
           >
-            임시 저장
+            {isSavingDraft ? "저장 중" : "임시 저장"}
           </button>
-        )}
+        ) : null}
         <button
           type="button"
           className="h-9 rounded-md px-3 text-sm text-black/45 transition-colors duration-300 ease-in-out hover:text-black dark:text-white/45 dark:hover:text-white"

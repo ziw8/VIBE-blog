@@ -1,8 +1,10 @@
 import { Container } from "@/components/container";
 import { ThemeControls } from "@/components/theme-controls";
-import { site } from "@/lib/site";
+import { getSite } from "@/lib/site";
 
-export function Footer() {
+export async function Footer() {
+  const site = await getSite();
+
   return (
     <footer className="py-5 text-sm">
       <Container>

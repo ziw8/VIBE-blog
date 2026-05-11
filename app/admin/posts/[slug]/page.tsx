@@ -4,8 +4,9 @@ import { AdminPostEditor } from "@/components/admin-post-editor";
 import { Container } from "@/components/container";
 import { Reveal } from "@/components/reveal";
 import { adminIsAuthenticated } from "@/lib/admin-auth";
-import { getPost, getPublishedPostTags } from "@/lib/posts";
+import { getPost, getRegisteredPostTags } from "@/lib/posts";
 import { getStoredPost } from "@/lib/supabase-posts";
+import { normalizeSlugParam } from "@/lib/utils";
 
 type AdminPostEditPageProps = {
   params: Promise<{
@@ -25,7 +26,8 @@ export default async function AdminPostEditPage({
     notFound();
   }
 
-  const { slug } = await params;
+  const { slug: slugParam } = await params;
+  const slug = normalizeSlugParam(slugParam);
   const storedPost = await getStoredPost(slug);
   const staticPost = storedPost ? null : getPost(slug);
   const post = storedPost
@@ -49,7 +51,7 @@ export default async function AdminPostEditPage({
   }
 
   const tags = Array.from(
-    new Set([...(await getPublishedPostTags()), ...post.tags]),
+    new Set([...(await getRegisteredPostTags()), ...post.tags]),
   ).sort((a, b) => a.localeCompare(b));
 
   return (

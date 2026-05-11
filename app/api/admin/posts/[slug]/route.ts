@@ -4,13 +4,14 @@ import {
   makePostDescription,
   validatePostEditorPayload,
 } from "@/lib/post-editor";
-import { getPost, getPublishedPostTags } from "@/lib/posts";
+import { getPost, getRegisteredPostTags } from "@/lib/posts";
 import {
   getPostsClient,
   getPublicPostFields,
   isMissingPostsTableError,
   postsStorageIsConfigured,
 } from "@/lib/supabase-posts";
+import { normalizeSlugParam } from "@/lib/utils";
 
 type AdminPostRouteContext = {
   params: Promise<{
@@ -62,7 +63,8 @@ export async function PATCH(
     return setupRequiredResponse();
   }
 
-  const { slug } = await params;
+  const { slug: slugParam } = await params;
+  const slug = normalizeSlugParam(slugParam);
   const supabase = getPostsClient();
 
   if (!supabase) {
@@ -90,7 +92,7 @@ export async function PATCH(
     return Response.json({ message: "글을 찾지 못했습니다." }, { status: 404 });
   }
 
-  const registeredTags = await getPublishedPostTags();
+  const registeredTags = await getRegisteredPostTags();
   const input = validatePostEditorPayload(await readJson(request), registeredTags);
 
   if (!input.ok) {
@@ -173,7 +175,8 @@ export async function DELETE(
     return setupRequiredResponse();
   }
 
-  const { slug } = await params;
+  const { slug: slugParam } = await params;
+  const slug = normalizeSlugParam(slugParam);
   const supabase = getPostsClient();
 
   if (!supabase) {

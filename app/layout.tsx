@@ -3,35 +3,39 @@ import { AdminEasterEgg } from "@/components/admin-easter-egg";
 import { BlogViewProvider } from "@/components/blog-view-provider";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
-import { site } from "@/lib/site";
+import { getSite, site } from "@/lib/site";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  metadataBase: new URL(site.url),
-  title: {
-    default: site.title,
-    template: `%s | ${site.name}`,
-  },
-  description: site.description,
-  icons: [
-    {
-      rel: "icon",
-      url: "/favicon-light.svg",
-      media: "(prefers-color-scheme: light)",
+export async function generateMetadata(): Promise<Metadata> {
+  const currentSite = await getSite();
+
+  return {
+    metadataBase: new URL(site.url),
+    title: {
+      default: currentSite.title,
+      template: `%s | ${currentSite.name}`,
     },
-    {
-      rel: "icon",
-      url: "/favicon-dark.svg",
-      media: "(prefers-color-scheme: dark)",
+    description: currentSite.description,
+    icons: [
+      {
+        rel: "icon",
+        url: "/favicon-light.svg",
+        media: "(prefers-color-scheme: light)",
+      },
+      {
+        rel: "icon",
+        url: "/favicon-dark.svg",
+        media: "(prefers-color-scheme: dark)",
+      },
+    ],
+    openGraph: {
+      title: currentSite.title,
+      description: currentSite.description,
+      type: "website",
+      images: ["/astro-nano.png"],
     },
-  ],
-  openGraph: {
-    title: site.title,
-    description: site.description,
-    type: "website",
-    images: ["/astro-nano.png"],
-  },
-};
+  };
+}
 
 export default function RootLayout({
   children,

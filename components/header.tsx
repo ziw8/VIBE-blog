@@ -1,7 +1,9 @@
 import { SiteLink } from "@/components/site-link";
-import { site } from "@/lib/site";
+import { getSite } from "@/lib/site";
 
-export function Header() {
+export async function Header() {
+  const site = await getSite();
+
   return (
     <header className="sticky top-0 z-50 pt-[calc(1rem+env(safe-area-inset-top))] pb-6">
       <div className="mx-auto w-full max-w-screen-lg px-5">
