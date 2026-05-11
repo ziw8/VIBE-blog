@@ -3,6 +3,8 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 
+const ADMIN_TRIGGER = "::admin";
+
 function isTypingTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) {
     return false;
@@ -16,38 +18,31 @@ function isTypingTarget(target: EventTarget | null) {
   );
 }
 
-export function AdminShortcut() {
+export function AdminEasterEgg() {
   const pathname = usePathname();
   const router = useRouter();
-  const checking = useRef(false);
+  const buffer = useRef("");
 
   useEffect(() => {
-    async function handleKeyDown(event: KeyboardEvent) {
+    function handleKeyDown(event: KeyboardEvent) {
       if (
-        event.key.toLowerCase() !== "q" ||
         event.metaKey ||
         event.ctrlKey ||
         event.altKey ||
+        event.key.length !== 1 ||
         isTypingTarget(event.target) ||
-        checking.current ||
-        pathname === "/admin"
+        pathname.startsWith("/admin")
       ) {
         return;
       }
 
-      checking.current = true;
+      buffer.current = `${buffer.current}${event.key}`.slice(
+        -ADMIN_TRIGGER.length,
+      );
 
-      try {
-        const response = await fetch("/api/admin/status", {
-          cache: "no-store",
-        });
-        const data = (await response.json()) as { isAdmin?: boolean };
-
-        if (data.isAdmin) {
-          router.push("/admin");
-        }
-      } finally {
-        checking.current = false;
+      if (buffer.current === ADMIN_TRIGGER) {
+        buffer.current = "";
+        router.push("/admin/login");
       }
     }
 

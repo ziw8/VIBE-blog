@@ -39,6 +39,12 @@
   --foreground: #0a0a0a;
   --muted: rgb(0 0 0 / 0.5);
   --header: #f5f5f4;
+  --article-default-text: #111111;
+  --article-muted-text: rgb(0 0 0 / 0.46);
+  --article-link: #f97066;
+  --article-link-hover: #fda29b;
+  --article-link-decoration: rgb(249 112 102 / 0.45);
+  --article-link-decoration-hover: rgb(249 112 102 / 0.75);
 }
 
 .dark {
@@ -46,6 +52,12 @@
   --foreground: #ffffff;
   --muted: rgb(255 255 255 / 0.75);
   --header: #232425;
+  --article-default-text: #ffffff;
+  --article-muted-text: rgb(255 255 255 / 0.76);
+  --article-link: #f97066;
+  --article-link-hover: #fda29b;
+  --article-link-decoration: rgb(249 112 102 / 0.45);
+  --article-link-decoration-hover: rgb(249 112 102 / 0.75);
 }
 
 @theme inline {
@@ -144,6 +156,41 @@ a:focus-visible {
 
 .dark .article :where(blockquote) {
   border-left-color: rgb(255 255 255 / 0.3);
+}
+
+.article :where(a) {
+  color: var(--article-link);
+  text-decoration-line: underline;
+  text-decoration-color: var(--article-link-decoration);
+  text-underline-offset: 0.2em;
+  transition:
+    color 300ms ease-in-out,
+    text-decoration-color 300ms ease-in-out;
+}
+
+.article :where(a:hover) {
+  color: var(--article-link-hover);
+  text-decoration-color: var(--article-link-decoration-hover);
+}
+
+.article :where([data-post-color="default"]) {
+  color: var(--article-default-text);
+}
+
+.article :where([data-post-color="muted"]) {
+  color: var(--article-muted-text);
+}
+
+.article :where([style*="color: rgb(17, 17, 17)"], [style*="color: #111111"]) {
+  color: var(--article-default-text) !important;
+}
+
+.article :where([style*="color: rgb(107, 114, 128)"], [style*="color: #6b7280"]) {
+  color: var(--article-muted-text) !important;
+}
+
+.article :where(a [data-post-color], a [style*="color"]) {
+  color: inherit !important;
 }
 
 .article :where(code) {

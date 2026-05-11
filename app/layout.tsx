@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AdminShortcut } from "@/components/admin-shortcut";
+import { AdminEasterEgg } from "@/components/admin-easter-egg";
 import { BlogViewProvider } from "@/components/blog-view-provider";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
@@ -63,7 +63,7 @@ export default function RootLayout({
       </head>
       <body className="flex min-h-full flex-col antialiased">
         <Header />
-        <AdminShortcut />
+        <AdminEasterEgg />
         <BlogViewProvider>
           <main className="flex-1 py-12">{children}</main>
         </BlogViewProvider>

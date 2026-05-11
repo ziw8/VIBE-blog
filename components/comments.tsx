@@ -652,7 +652,7 @@ export function Comments({ postSlug }: { postSlug: string }) {
 
         {!isLoading && topLevelComments.length === 0 ? (
           <p className="text-sm text-black/45 dark:text-white/45">
-            아직 댓글이 없습니다.
+            첫 댓글을 남겨주세요!
           </p>
         ) : null}
 

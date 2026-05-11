@@ -24,12 +24,12 @@ function groupByTag(posts: BlogPostListItem[]) {
   }, {});
 }
 
-function postTime(post: BlogPostListItem) {
-  return new Date(`${post.date}T00:00:00`).valueOf();
+function postModifiedTime(post: BlogPostListItem) {
+  return new Date(post.updatedAt ?? `${post.date}T00:00:00`).valueOf();
 }
 
 function getLatestTagTime(posts: BlogPostListItem[]) {
-  return Math.max(...posts.map(postTime));
+  return Math.max(...posts.map(postModifiedTime));
 }
 
 function TabButton({
@@ -93,7 +93,14 @@ export function BlogViewTabs({ posts }: { posts: BlogPostListItem[] }) {
   } = useBlogView();
   const isTagsView = selectedView === "tags";
   const groupedPosts = groupByYear(posts);
-  const groupedTags = groupByTag(posts);
+  const groupedTags = Object.fromEntries(
+    Object.entries(groupByTag(posts)).map(([tag, tagPosts]) => [
+      tag,
+      [...tagPosts].sort(
+        (a, b) => postModifiedTime(b) - postModifiedTime(a),
+      ),
+    ]),
+  );
   const years = Object.keys(groupedPosts).sort((a, b) => Number(b) - Number(a));
   const tags = Object.keys(groupedTags).sort((a, b) => {
     const latestDiff =

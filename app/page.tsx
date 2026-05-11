@@ -4,10 +4,10 @@ import { HomeTagLink } from "@/components/home-tag-link";
 import { PostRow } from "@/components/post-row";
 import { Reveal } from "@/components/reveal";
 import { SiteLink } from "@/components/site-link";
-import { getPosts } from "@/lib/posts";
+import { getPublishedPosts } from "@/lib/posts";
 
-export default function Home() {
-  const latestPosts = getPosts();
+export default async function Home() {
+  const latestPosts = await getPublishedPosts();
   const tags = Array.from(new Set(latestPosts.flatMap((post) => post.tags)));
 
   return (

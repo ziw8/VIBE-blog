@@ -4,7 +4,7 @@ import { CommentEmojiSummaryLoader, Comments } from "@/components/comments";
 import { Container } from "@/components/container";
 import { Reveal } from "@/components/reveal";
 import { SiteLink } from "@/components/site-link";
-import { getPost, getPosts } from "@/lib/posts";
+import { getPublishedPost, getPublishedPosts } from "@/lib/posts";
 import { formatDottedDate } from "@/lib/utils";
 
 type BlogPostPageProps = {
@@ -13,8 +13,18 @@ type BlogPostPageProps = {
   }>;
 };
 
-export function generateStaticParams() {
-  return getPosts().map((post) => ({
+export const dynamic = "force-dynamic";
+
+function normalizeSlugParam(slug: string) {
+  try {
+    return decodeURIComponent(slug);
+  } catch {
+    return slug;
+  }
+}
+
+export async function generateStaticParams() {
+  return (await getPublishedPosts()).map((post) => ({
     slug: post.slug,
   }));
 }
@@ -23,7 +33,7 @@ export async function generateMetadata({
   params,
 }: BlogPostPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const post = getPost(slug);
+  const post = await getPublishedPost(normalizeSlugParam(slug));
 
   if (!post) {
     return {};
@@ -44,7 +54,7 @@ export async function generateMetadata({
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const { slug } = await params;
-  const post = getPost(slug);
+  const post = await getPublishedPost(normalizeSlugParam(slug));
 
   if (!post) {
     notFound();
@@ -74,7 +84,14 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       </div>
 
       <Reveal delay={280}>
-        <article className="article">{post.content}</article>
+        {post.contentHtml ? (
+          <article
+            className="article"
+            dangerouslySetInnerHTML={{ __html: post.contentHtml }}
+          />
+        ) : (
+          <article className="article">{post.content}</article>
+        )}
       </Reveal>
 
       <Reveal delay={360}>

@@ -1,4 +1,12 @@
 import type { ReactNode } from "react";
+import {
+  getStoredPost,
+  getStoredPostShadow,
+  getStoredPostShadows,
+  getStoredPosts,
+  type StoredPostRow,
+} from "@/lib/supabase-posts";
+import { getReadingTime } from "@/lib/post-editor";
 
 export type BlogPost = {
   slug: string;
@@ -7,12 +15,15 @@ export type BlogPost = {
   tags: string[];
   date: string;
   readingTime: string;
-  content: ReactNode;
+  content?: ReactNode;
+  contentHtml?: string;
+  source?: "static" | "supabase";
+  updatedAt?: string;
 };
 
 export type BlogPostListItem = Pick<
   BlogPost,
-  "slug" | "title" | "tags" | "date"
+  "slug" | "title" | "tags" | "date" | "updatedAt"
 >;
 
 export const posts: BlogPost[] = [
@@ -23,6 +34,22 @@ export const posts: BlogPost[] = [
     tags: ["Build", "Design"],
     date: "2026-05-08",
     readingTime: "3분 읽기",
+    contentHtml: `
+      <p>
+        좋은 블로그 레이아웃은 글을 방해하지 않습니다. 화면의 폭은
+        좁게, 대비는 차분하게, 움직임은 필요한 만큼만 남겨 읽는 흐름을
+        우선했습니다.
+      </p>
+      <h2>옮겨온 것들</h2>
+      <p>
+        넓은 헤더와 좁은 본문, 목록 중심의 글 배열, 라이트/다크/시스템
+        테마 전환은 Next.js 컴포넌트로 다시 구성했습니다.
+      </p>
+      <p>
+        결과적으로 화면은 여전히 조용합니다. 인터페이스보다 글이 먼저
+        보이고, 필요한 탐색만 가볍게 남겨두는 것이 목표였습니다.
+      </p>
+    `,
     content: (
       <>
         <p>
@@ -49,6 +76,23 @@ export const posts: BlogPost[] = [
     tags: ["Design"],
     date: "2026-04-19",
     readingTime: "2분 읽기",
+    contentHtml: `
+      <p>
+        조용한 블로그는 비어 있는 화면이 아니라 잘 덜어낸 화면에
+        가깝습니다. 다음에 무엇을 읽을지 판단하는 데 필요하지 않은 장식은
+        과감히 줄였습니다.
+      </p>
+      <h2>필요한 절제</h2>
+      <p>
+        좁은 행간, 분명한 포커스 상태, 예측 가능한 여백만으로도 충분히
+        많은 인상을 만들 수 있습니다. 반복되는 항목은 카드보다 가벼운
+        목록으로 두어 훑어보기 쉽게 했습니다.
+      </p>
+      <blockquote>
+        좋은 미니멀 인터페이스는 남은 요소가 모두 이유를 가질 때
+        차분해집니다.
+      </blockquote>
+    `,
     content: (
       <>
         <p>
@@ -76,6 +120,19 @@ export const posts: BlogPost[] = [
     tags: ["Notes"],
     date: "2026-03-31",
     readingTime: "2분 읽기",
+    contentHtml: `
+      <p>
+        발행 전에는 글을 두 번 읽습니다. 한 번은 구조를 보고, 한 번은
+        읽는 사람이 걸릴 만한 부분을 찾습니다.
+      </p>
+      <h2>발행 전에</h2>
+      <ul>
+        <li>제목만 보아도 글의 방향을 짐작할 수 있는지 확인합니다.</li>
+        <li>목록이나 검색 결과에서 설명이 충분히 도움이 되는지 봅니다.</li>
+        <li>문단이 너무 길어지기 전에 자연스럽게 끊습니다.</li>
+        <li>라이트 모드와 다크 모드에서 모두 읽어봅니다.</li>
+      </ul>
+    `,
     content: (
       <>
         <p>
@@ -94,14 +151,83 @@ export const posts: BlogPost[] = [
   },
 ];
 
-export function getPost(slug: string) {
-  return posts.find((post) => post.slug === slug);
+function normalizeStaticPost(post: BlogPost): BlogPost {
+  return {
+    ...post,
+    source: "static",
+  };
 }
 
-export function getPosts() {
-  return [...posts].sort(
+function toBlogPost(row: StoredPostRow): BlogPost {
+  const date = row.published_at.slice(0, 10);
+
+  return {
+    slug: row.slug,
+    title: row.title,
+    description: row.description,
+    tags: row.tags,
+    date,
+    readingTime: getReadingTime(row.content_html),
+    contentHtml: row.content_html,
+    source: "supabase",
+    updatedAt: row.updated_at,
+  };
+}
+
+function sortPosts(items: BlogPost[]) {
+  return [...items].sort(
     (a, b) =>
       new Date(`${b.date}T00:00:00`).valueOf() -
       new Date(`${a.date}T00:00:00`).valueOf(),
+  );
+}
+
+export function getPost(slug: string) {
+  return posts.map(normalizeStaticPost).find((post) => post.slug === slug);
+}
+
+export function getPosts() {
+  return sortPosts(posts.map(normalizeStaticPost));
+}
+
+export function getPostTags() {
+  return Array.from(new Set(posts.flatMap((post) => post.tags))).sort((a, b) =>
+    a.localeCompare(b),
+  );
+}
+
+export async function getPublishedPosts() {
+  const storedPosts = (await getStoredPosts()).map(toBlogPost);
+  const storedSlugs = new Set(
+    (await getStoredPostShadows()).map((post) => post.slug),
+  );
+  const staticPosts = posts
+    .filter((post) => !storedSlugs.has(post.slug))
+    .map(normalizeStaticPost);
+
+  return sortPosts([...storedPosts, ...staticPosts]);
+}
+
+export async function getPublishedPost(slug: string) {
+  const storedPost = await getStoredPost(slug);
+
+  if (storedPost) {
+    return toBlogPost(storedPost);
+  }
+
+  const storedShadow = await getStoredPostShadow(slug);
+
+  if (storedShadow) {
+    return undefined;
+  }
+
+  return getPost(slug);
+}
+
+export async function getPublishedPostTags() {
+  const publishedPosts = await getPublishedPosts();
+
+  return Array.from(new Set(publishedPosts.flatMap((post) => post.tags))).sort(
+    (a, b) => a.localeCompare(b),
   );
 }
