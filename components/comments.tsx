@@ -47,10 +47,12 @@ type PasswordErrorTarget = {
 type ComposerProps = {
   form: CommentForm;
   setForm: Dispatch<SetStateAction<CommentForm>>;
+  nicknameError?: string | null;
   submitLabel: string;
   isSubmitting: boolean;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onCancel?: () => void;
+  onNicknameChange?: () => void;
 };
 
 const initialForm: CommentForm = {
@@ -61,6 +63,10 @@ const initialForm: CommentForm = {
 };
 
 const PASSWORD_MISMATCH_MESSAGE = "비밀번호가 일치하지 않습니다.";
+
+function isNicknameErrorMessage(message: string) {
+  return message.includes("닉네임");
+}
 
 function getVisibleComments(comments: PublicComment[]) {
   const repliesByParentId = comments.reduce<Record<string, PublicComment[]>>(
@@ -183,31 +189,45 @@ async function parseResponse(response: Response) {
 function CommentComposer({
   form,
   setForm,
+  nicknameError,
   submitLabel,
   isSubmitting,
   onSubmit,
   onCancel,
+  onNicknameChange,
 }: ComposerProps) {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="grid gap-1.5 text-sm">
+      <div className="grid items-start gap-3 sm:grid-cols-2">
+        <label className="grid content-start gap-1.5 text-sm">
           <span className="text-black/45 dark:text-white/45">닉네임</span>
           <input
             value={form.nickname}
             maxLength={COMMENT_LIMITS.nicknameMax}
-            onChange={(event) =>
+            aria-invalid={Boolean(nicknameError)}
+            onChange={(event) => {
+              onNicknameChange?.();
               setForm((current) => ({
                 ...current,
                 nickname: event.target.value,
-              }))
-            }
-            className="h-10 rounded-md border border-black/10 bg-transparent px-3 text-black outline-none transition-colors duration-300 ease-in-out placeholder:text-black/25 focus:border-black/30 dark:border-white/15 dark:text-white dark:placeholder:text-white/25 dark:focus:border-white/35"
+              }));
+            }}
+            className={cn(
+              "h-10 rounded-md border bg-transparent px-3 text-black outline-none transition-colors duration-300 ease-in-out placeholder:text-black/25 focus:border-black/30 dark:text-white dark:placeholder:text-white/25 dark:focus:border-white/35",
+              nicknameError
+                ? "border-red-400 focus:border-red-500 dark:border-red-400 dark:focus:border-red-300"
+                : "border-black/10 dark:border-white/15",
+            )}
             placeholder="닉네임"
             required
           />
+          {nicknameError ? (
+            <p className="pl-3 text-xs text-red-600 dark:text-red-400">
+              {nicknameError}
+            </p>
+          ) : null}
         </label>
-        <label className="grid gap-1.5 text-sm">
+        <label className="grid content-start gap-1.5 text-sm">
           <span className="text-black/45 dark:text-white/45">비밀번호</span>
           <input
             type="password"
@@ -309,6 +329,12 @@ export function Comments({ postSlug }: { postSlug: string }) {
   const [deletePassword, setDeletePassword] = useState("");
   const [passwordError, setPasswordError] =
     useState<PasswordErrorTarget>(null);
+  const [createNicknameError, setCreateNicknameError] = useState<string | null>(
+    null,
+  );
+  const [replyNicknameError, setReplyNicknameError] = useState<string | null>(
+    null,
+  );
   const [message, setMessage] = useState<string | null>(null);
   const [setupRequired, setSetupRequired] = useState(false);
   const [migrationRequired, setMigrationRequired] = useState(false);
@@ -390,6 +416,7 @@ export function Comments({ postSlug }: { postSlug: string }) {
     setIsSubmitting(true);
     setMessage(null);
     setPasswordError(null);
+    setCreateNicknameError(null);
 
     try {
       const result = await submitComment(null, form);
@@ -403,9 +430,14 @@ export function Comments({ postSlug }: { postSlug: string }) {
       setMigrationRequired(Boolean(result.migrationRequired));
       setMessage("댓글이 등록되었습니다.");
     } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "댓글을 등록하지 못했습니다.",
-      );
+      const errorMessage =
+        error instanceof Error ? error.message : "댓글을 등록하지 못했습니다.";
+
+      if (isNicknameErrorMessage(errorMessage)) {
+        setCreateNicknameError(errorMessage);
+      } else {
+        setMessage(errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -420,6 +452,7 @@ export function Comments({ postSlug }: { postSlug: string }) {
 
     setIsSubmitting(true);
     setMessage(null);
+    setReplyNicknameError(null);
 
     try {
       const result = await submitComment(replyingToId, replyForm);
@@ -433,9 +466,14 @@ export function Comments({ postSlug }: { postSlug: string }) {
       setMigrationRequired(Boolean(result.migrationRequired));
       setMessage("답글이 등록되었습니다.");
     } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "답글을 등록하지 못했습니다.",
-      );
+      const errorMessage =
+        error instanceof Error ? error.message : "답글을 등록하지 못했습니다.";
+
+      if (isNicknameErrorMessage(errorMessage)) {
+        setReplyNicknameError(errorMessage);
+      } else {
+        setMessage(errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -580,6 +618,7 @@ export function Comments({ postSlug }: { postSlug: string }) {
     setEditingId(null);
     setDeleteId(null);
     setPasswordError(null);
+    setReplyNicknameError(null);
     setMessage(null);
   }
 
@@ -614,7 +653,10 @@ export function Comments({ postSlug }: { postSlug: string }) {
         <button
           type="button"
           className="shrink-0 text-right text-sm font-semibold text-black underline decoration-black/25 underline-offset-4 transition-colors duration-300 ease-in-out hover:decoration-black/60 dark:text-white dark:decoration-white/35 dark:hover:decoration-white/70"
-          onClick={() => setIsCreateOpen((current) => !current)}
+          onClick={() => {
+            setCreateNicknameError(null);
+            setIsCreateOpen((current) => !current);
+          }}
         >
           {isCreateOpen ? "닫기" : "이모지와 댓글 남기기"}
         </button>
@@ -625,10 +667,15 @@ export function Comments({ postSlug }: { postSlug: string }) {
           <CommentComposer
             form={form}
             setForm={setForm}
+            nicknameError={createNicknameError}
             submitLabel="등록"
             isSubmitting={isSubmitting}
             onSubmit={handleCreate}
-            onCancel={() => setIsCreateOpen(false)}
+            onCancel={() => {
+              setIsCreateOpen(false);
+              setCreateNicknameError(null);
+            }}
+            onNicknameChange={() => setCreateNicknameError(null)}
           />
         </div>
       ) : null}
@@ -826,10 +873,15 @@ export function Comments({ postSlug }: { postSlug: string }) {
                 <CommentComposer
                   form={replyForm}
                   setForm={setReplyForm}
+                  nicknameError={replyNicknameError}
                   submitLabel="답글 등록"
                   isSubmitting={isSubmitting}
                   onSubmit={handleReply}
-                  onCancel={() => setReplyingToId(null)}
+                  onCancel={() => {
+                    setReplyingToId(null);
+                    setReplyNicknameError(null);
+                  }}
+                  onNicknameChange={() => setReplyNicknameError(null)}
                 />
               </div>
             ) : null}

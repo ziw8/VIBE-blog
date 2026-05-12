@@ -70,6 +70,7 @@
 
 html {
   color-scheme: light;
+  font-size: 80%;
   overflow-y: scroll;
   scroll-behavior: smooth;
 }
@@ -204,6 +205,88 @@ a:focus-visible {
 
 .dark .article :where(code) {
   background: rgb(255 255 255 / 0.1);
+}
+
+.article :where(.post-media-gallery) {
+  display: grid;
+  gap: 0.5rem;
+  margin-block: 1.5rem;
+}
+
+.article :where(.post-media-gallery[data-gallery-count="1"]) {
+  display: block;
+}
+
+.article :where(.post-media-gallery[data-gallery-count="2"], .post-media-gallery[data-gallery-count="4"]) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.article :where(.post-media-gallery[data-gallery-count="3"]) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.article :where(.post-media-gallery[data-gallery-count="3"] img:nth-child(3)) {
+  grid-column: 1 / -1;
+}
+
+.article :where(.post-media-gallery img) {
+  aspect-ratio: 4 / 3;
+  background: rgb(0 0 0 / 0.06);
+  border-radius: 0.375rem;
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.dark .article :where(.post-media-gallery img) {
+  background: rgb(255 255 255 / 0.08);
+}
+
+.article :where(.post-video) {
+  margin-block: 1.5rem;
+}
+
+.article :where(.post-video video) {
+  background: #111111;
+  border-radius: 0.375rem;
+  display: block;
+  max-height: 70vh;
+  width: 100%;
+}
+
+.article :where(pre) {
+  background: #171717;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 0.5rem;
+  color: #e5e7eb;
+  font-family: "Pretendard", ui-sans-serif, system-ui, sans-serif;
+  line-height: 1.75;
+  margin-block: 1.5rem;
+  overflow-x: auto;
+  padding: 2.4rem 1rem 1rem;
+  position: relative;
+  white-space: pre;
+}
+
+.article :where(pre)::before {
+  color: rgb(255 255 255 / 0.45);
+  content: attr(data-code-language);
+  font-size: 0.75rem;
+  font-weight: 600;
+  left: 1rem;
+  position: absolute;
+  text-transform: uppercase;
+  top: 0.8rem;
+}
+
+.article :where(pre code) {
+  background: transparent;
+  border-radius: 0;
+  color: inherit;
+  display: block;
+  font: inherit;
+  padding: 0;
 }
 
 .reveal {

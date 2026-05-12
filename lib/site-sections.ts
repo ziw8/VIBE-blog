@@ -1,3 +1,5 @@
+import { sanitizePostHtml, stripHtml } from "@/lib/post-editor";
+
 export const siteSectionKeys = [
   "blogName",
   "intro",
@@ -48,8 +50,57 @@ export function isSiteSectionKey(value: string): value is SiteSectionKey {
   return siteSectionKeys.includes(value as SiteSectionKey);
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function hasHtmlTag(value: string) {
+  return /<\/?[a-z][\s\S]*>/i.test(value);
+}
+
+function htmlToText(value: string) {
+  return value
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|h[1-6]|li|blockquote)>/gi, "\n\n")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n\s+/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+export function sectionBodyToHtml(body: string) {
+  const trimmedBody = body.trim();
+
+  if (!trimmedBody) {
+    return "";
+  }
+
+  if (hasHtmlTag(trimmedBody)) {
+    return sanitizePostHtml(trimmedBody);
+  }
+
+  return trimmedBody
+    .split(/\n{2,}/)
+    .map((paragraph) =>
+      `<p>${escapeHtml(paragraph.trim()).replace(/\n/g, "<br>")}</p>`,
+    )
+    .join("");
+}
+
+export function sectionBodyToText(body: string) {
+  return hasHtmlTag(body) ? htmlToText(body) : body.trim();
+}
+
 export function splitSectionParagraphs(body: string) {
-  return body
+  return sectionBodyToText(body)
     .split(/\n{2,}/)
     .map((paragraph) => paragraph.trim())
     .filter(Boolean);
@@ -59,10 +110,10 @@ export function validateSiteSectionBody(
   value: unknown,
   key?: SiteSectionKey,
 ): { ok: true; value: string } | { ok: false; message: string } {
-  const body = typeof value === "string" ? value.trim() : "";
+  const rawBody = typeof value === "string" ? value.trim() : "";
 
   if (key === "blogName") {
-    const name = body.replace(/\s+/g, " ");
+    const name = rawBody.replace(/\s+/g, " ");
 
     if (!name || name.length > 40) {
       return {
@@ -78,10 +129,12 @@ export function validateSiteSectionBody(
     return { ok: true, value: name };
   }
 
-  if (!body || body.length > 4000) {
+  const body = sanitizePostHtml(rawBody).trim();
+
+  if (!stripHtml(body) || body.length > 20000) {
     return {
       ok: false,
-      message: "내용은 4000자 이하로 입력해주세요.",
+      message: "내용은 20000자 이하로 입력해주세요.",
     };
   }
 

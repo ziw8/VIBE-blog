@@ -28,7 +28,7 @@ export function makePostDescription(contentHtml: string) {
   const text = stripHtml(contentHtml);
 
   if (text.length <= 120) {
-    return text;
+    return text || "미디어가 포함된 글입니다.";
   }
 
   return `${text.slice(0, 120).trim()}...`;
@@ -50,6 +50,10 @@ export function slugifyTitle(title: string) {
     .replace(/^-+|-+$/g, "");
 
   return slug || `post-${Date.now()}`;
+}
+
+function hasEmbeds(contentHtml: string) {
+  return /<(img|video|pre)\b/i.test(contentHtml);
 }
 
 export function validatePostEditorPayload(
@@ -82,8 +86,12 @@ export function validatePostEditorPayload(
     return { ok: false, message: "태그를 하나 이상 선택해주세요." };
   }
 
-  if (!plainText || contentHtml.length > 60000) {
+  if (!plainText && !hasEmbeds(contentHtml)) {
     return { ok: false, message: "본문을 입력해주세요." };
+  }
+
+  if (contentHtml.length > 120000) {
+    return { ok: false, message: "본문이 너무 깁니다." };
   }
 
   return {
@@ -121,7 +129,7 @@ export function validatePostDraftPayload(
     return { ok: false, message: "제목은 120자 이하로 입력해주세요." };
   }
 
-  if (contentHtml.length > 60000) {
+  if (contentHtml.length > 120000) {
     return { ok: false, message: "본문이 너무 깁니다." };
   }
 

@@ -3,9 +3,9 @@ import { GitHubIcon, InstagramIcon } from "@/components/icons";
 import { HomeTagLink } from "@/components/home-tag-link";
 import { PostRow } from "@/components/post-row";
 import { Reveal } from "@/components/reveal";
+import { SiteSectionContent } from "@/components/site-section-content";
 import { SiteLink } from "@/components/site-link";
 import { getHomePostTags, getPublishedPosts } from "@/lib/posts";
-import { splitSectionParagraphs } from "@/lib/site-sections";
 import { getSiteSection } from "@/lib/supabase-site-sections";
 
 export default async function Home() {
@@ -21,11 +21,10 @@ export default async function Home() {
       <div className="space-y-16">
         <Reveal>
           <section>
-            <article className="article space-y-4 text-black/75 dark:text-white/90">
-              {splitSectionParagraphs(introSection.body).map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
-              ))}
-            </article>
+            <SiteSectionContent
+              body={introSection.body}
+              className="text-black/75 dark:text-white/90"
+            />
           </section>
         </Reveal>
 
@@ -65,11 +64,10 @@ export default async function Home() {
             <h2 className="font-semibold text-black dark:text-white">
               Contacts
             </h2>
-            <div className="space-y-2 text-black/75 dark:text-white/90">
-              {splitSectionParagraphs(contactsSection.body).map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
-              ))}
-            </div>
+            <SiteSectionContent
+              body={contactsSection.body}
+              className="text-black/75 dark:text-white/90"
+            />
             <ul className="flex flex-wrap gap-2">
               <li>
                 <SiteLink

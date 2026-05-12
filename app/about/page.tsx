@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/container";
 import { Reveal } from "@/components/reveal";
-import { splitSectionParagraphs } from "@/lib/site-sections";
+import { SiteSectionContent } from "@/components/site-section-content";
 import { getSiteSection } from "@/lib/supabase-site-sections";
 
 export const metadata: Metadata = {
@@ -20,11 +20,10 @@ export default async function AboutPage() {
         </Reveal>
 
         <Reveal delay={120}>
-          <article className="article space-y-4 text-black/75 dark:text-white/90">
-            {splitSectionParagraphs(section.body).map((paragraph) => (
-              <p key={paragraph}>{paragraph}</p>
-            ))}
-          </article>
+          <SiteSectionContent
+            body={section.body}
+            className="text-black/75 dark:text-white/90"
+          />
         </Reveal>
       </div>
     </Container>
